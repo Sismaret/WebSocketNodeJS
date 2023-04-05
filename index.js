@@ -5,18 +5,33 @@ const path = require('path');
 const app = express();
 const port = 9090;
 
+var clients = {};
+
 const websocket = new ws.Server({
     noServer: true
 })
 
+var user;
+
 websocket.on('connection', (socket)=> {
     console.info("client connected");
 
-    socket.send("Test");
-
     socket.on('message', (message)=>{
-        console.info(message.toString());
-        socket.send("Connection successfully");
+        
+        let typeMessage = JSON.parse(message.toString()).type;
+
+        if(typeMessage == "login") {
+            user = JSON.parse(message.toString()).user;
+            clients[user] = socket;
+            socket.send("Login successfully");
+        } else if (typeMessage == "chat"){
+            msgData = JSON.parse(message.toString()).msg;
+            destUser = JSON.parse(message.toString()).dest;
+            user = JSON.parse(message.toString()).user;
+            var socketSend = clients[destUser];
+            socketSend.send(msgData);
+        }
+        
     })
 
     socket.on('close', ()=>{
